@@ -10,12 +10,6 @@ function extractField(){
   echo "$VALUE"
 }
 
-# Apparently this shouldn't have any dots in it
-function extractKey(){
-  KEY="$(echo $1 | cut -c 1-350)"
-  echo "$KEY"
-}
-
 function saveLoginCookie(){
   # Get magic secret values
   LOGINPAGE=$(curl -s --cookie /tmp/$LOCKID.cookies.txt --cookie-jar /tmp/$LOCKID.cookies.txt https://cas.byu.edu/cas/login?service=https%3A%2F%2Fnit.byu.edu%2Fry%2Fwebapp%2Fnit%2Fvalidate%3Ftarget%3Dhttps%253A%252F%252Fnit.byu.edu%252Fry%252Fwebapp%252Fnit%252Fapp%253Fservice%253Dpage%252FJackLookup)
@@ -89,8 +83,7 @@ function checkPort() {
 }
 
 # Begin execution
-ONETIME_KEY="$(saveLoginCookie)"
-KEY="$(extractKey $ONETIME_KEY)"
+KEY="$(saveLoginCookie)"
 
 # Make sure child processes stop when we do
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
