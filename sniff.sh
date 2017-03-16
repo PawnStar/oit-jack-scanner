@@ -45,7 +45,13 @@ function displayStatus(){
   LINES=$(cat $1 | wc -l)
   TOTAL=$(( $CONNECTED+$UNCONNECTED+$NONEXISTANT+$ERROR ))
 
-  clear
+  tput cuu1
+  tput cuu1
+  tput cuu1
+  tput cuu1
+  tput cuu1
+  tput cuu1
+
   echo "$CONNECTED connected (active) ports"
   echo "$UNCONNECTED disconnected (inactive) ports"
   echo "$NONEXISTANT ports that don't exist"
@@ -91,7 +97,10 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 # Run a bunch of ports in parallel
 export -f checkPort
 export LOCKID
-(seq -f "%04g" 0 $MAXPORT | parallel checkPort {} $KEY > /tmp/parallel.$LOCKID.txt; rm /tmp/$LOCKID.cookies.txt ) &
+(seq -f "%04g" 0 $MAXPORT | parallel "checkPort {} $KEY" > /tmp/parallel.$LOCKID.txt; rm /tmp/$LOCKID.cookies.txt ) &
+
+echo; echo "Scanning:"
+echo; echo; echo; echo; echo; echo;
 
 # Display status while we wait
 while [ -e /tmp/$LOCKID.cookies.txt ]; do
@@ -104,6 +113,6 @@ wait
 displayStatus /tmp/parallel.$LOCKID.txt
 
 # Write final (sorted) file
-echo "Writing log to file $2"
+echo;echo "Writing log to file $2"
 cat /tmp/parallel.$LOCKID.txt | sort > $2
 rm /tmp/parallel.$LOCKID.txt
