@@ -88,16 +88,13 @@ KEY="$(saveLoginCookie)"
 # Make sure child processes stop when we do
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-# Create lock file
-echo "lock" > /tmp/parallel.$LOCKID.lock.txt
-
 # Run a bunch of ports in parallel
 export -f checkPort
 export LOCKID
-(seq -f "%04g" 0 $MAXPORT | parallel checkPort {} $KEY > /tmp/parallel.$LOCKID.txt; rm /tmp/parallel.$LOCKID.lock.txt ) &
+(seq -f "%04g" 0 $MAXPORT | parallel checkPort {} $KEY > /tmp/parallel.$LOCKID.txt; rm /tmp/$LOCKID.cookies.txt ) &
 
 # Display status while we wait
-while [ -e /tmp/parallel.$LOCKID.lock.txt ]; do
+while [ -e /tmp/$LOCKID.cookies.txt ]; do
   displayStatus /tmp/parallel.$LOCKID.txt
   sleep .5
 done
@@ -109,7 +106,4 @@ displayStatus /tmp/parallel.$LOCKID.txt
 # Write final (sorted) file
 echo "Writing log to file $2"
 cat /tmp/parallel.$LOCKID.txt | sort > $2
-
-# Clean up
 rm /tmp/parallel.$LOCKID.txt
-rm /tmp/$LOCKID.cookies.txt
