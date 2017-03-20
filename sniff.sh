@@ -1,6 +1,5 @@
-MAXPORT=$1
 LOCKID=$((1 + RANDOM % 100000))
-OUTFILE=$2
+OUTFILE=$1
 
 function extractField() {
   # $1 should be input to extract from.
@@ -40,7 +39,7 @@ function displayStatus() {
   CONNECTED=$(cat $1 | grep ",connected" | wc -l)
   UNCONNECTED=$(cat $1 | grep ",unconnected" | wc -l)
   NONEXISTANT=$(cat $1 | grep ',nonexistant' | wc -l)
-  ERROR=$(cat $1 | grep error | wc -l)
+  ERROR=$(cat $1 | grep ',unknown' | wc -l)
   LINES=$(cat $1 | wc -l)
   TOTAL=$(( $CONNECTED+$UNCONNECTED+$NONEXISTANT+$ERROR ))
 
@@ -67,22 +66,30 @@ function createInfoTable() {
   function getResultField() {
     LINES=$(echo "$RESULT" | tr -d '\n\r' | sed 's/tr/\n/g' | grep '<td align="right">');
 
-    SECTION=$(echo "$LINES" | grep -E '<td align="right">( <font color="green">)?'"$1"'(</font> )?(:)?</td>')
-    echo $(echo "$SECTION" | grep -oE '<td>(<a [^>]*>)?[^<]*' | grep -o '[^>]*$')
+    SECTION=$(echo "$LINES" | grep -E '<td align="right">( <font color="green">)?(No )?'"$1"'(</font> )?(:)?</td>')
+    RESULT=$(echo "$SECTION" | grep -oE '<td>(<a [^>]*>)?[^<]*' | grep -o '[^>]*$')
+    if [[ $RESULT == "" ]]; then
+      echo "no$1"
+    else
+      echo "$RESULT"
+    fi
     #echo $(echo "$SECTION" | grep '<td>(<a [^>]*>)?[^<]*' | grep '>.*$' | grep '[*>]*')
   }
 
+  STATUS="unknown"
+
   if [[ $RESULT == *"Error getting jack information"* ]]; then
-    echo "$BUILDING,$PORT,unknown,noroom,linkerror,nodevice,noip,nopair,nodepartment,nopower,noconfig"
+    STATUS="unknown"
   elif [[ $RESULT == *"NetDoc reports that this jack exists, but is not connected to any switch"* ]]; then
-    echo "$BUILDING,$PORT,unconnected,$(getResultField 'Room:'),nolink,nodevice,noip,nopair,nodepartment,nopower,noconfig"
+    STATUS="unconnected"
   elif [[ $RESULT == *'<font color="green">Link</font>'* ]]; then
-    echo "$BUILDING,$PORT,connected,$(getResultField 'Room:'),$(getResultField 'Link'),nodevice,noip,nopair,nodepartment,nopower,noconfig"
+    STATUS="connected"
   elif [[ $RESULT == *'No jack was found'* ]]; then
-    echo "$BUILDING,$PORT,nonexistant,noroom,nolink,nodevice,noip,nopair,nodepartment,nopower,noconfig"
+    STATUS="nonexistant"
   else
-    echo "$BUILDING,$PORT,unknown,noroom,networkerror,nodevice,noip,nopair,nodepartment,nopower,noconfig"
+    STATUS="unknown"
   fi
+  echo "$BUILDING,$PORT,$STATUS,$(getResultField 'Room'),$(getResultField 'Link'),noDevice,noIp,$(getResultField 'Pair'),$(getResultField 'Department'),$(getResultField 'Power'),$(getResultField 'Config')"
 }
 
 
@@ -115,7 +122,7 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 export -f checkPort
 export -f createInfoTable
 export LOCKID
-(seq -f "%04g" 0 $MAXPORT | parallel "checkPort {} $KEY" > /tmp/parallel.$LOCKID.txt; rm /tmp/$LOCKID.cookies.txt ) &
+(cat ports.txt | parallel "checkPort {} $KEY" > /tmp/parallel.$LOCKID.txt; rm /tmp/$LOCKID.cookies.txt ) &
 
 echo; echo "Scanning:"
 echo; echo; echo; echo; echo; echo;
@@ -131,7 +138,7 @@ wait
 displayStatus /tmp/parallel.$LOCKID.txt
 
 # Write final (sorted) file
-echo;echo "Writing log to file $2"
-echo "BUILDING,JACKNUMBER,STATUS,ROOM,LINK,DEVICENAME,IPADDRESS,PAIR,DEPARTMENT,POWER,CONFIG" > $2
-cat /tmp/parallel.$LOCKID.txt | sort >> $2
+echo;echo "Writing log to file $OUTFILE"
+echo "BUILDING,JACKNUMBER,STATUS,ROOM,LINK,DEVICENAME,IPADDRESS,PAIR,DEPARTMENT,POWER,CONFIG" > $OUTFILE
+cat /tmp/parallel.$LOCKID.txt | sort >> $OUTFILE
 rm /tmp/parallel.$LOCKID.txt
