@@ -1,5 +1,6 @@
 LOCKID=$((1 + RANDOM % 100000))
-OUTFILE=$1
+INFILE=$1
+OUTFILE=$2
 
 function extractField() {
   # $1 should be input to extract from.
@@ -94,11 +95,12 @@ function createInfoTable() {
 
 
 function checkPort() {
-  # $1 Should be the port
-  # $2 Should be one time key ("brownie" as it's called on their page)
-  BUILDING='ESC'
-  PORT=$1
-  KEY=$2
+  # $1 Should be the building
+  # $2 Should be the port
+  # $3 Should be one time key ("brownie" as it's called on their page)
+  BUILDING=$1
+  PORT=$2
+  KEY=$3
   RESULT=$(curl --request POST 'https://nit.byu.edu/ry/webapp/nit/app' \
     --cookie /tmp/$LOCKID.cookies.txt \
     -H 'Pragma: no-cache' \
@@ -122,7 +124,7 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 export -f checkPort
 export -f createInfoTable
 export LOCKID
-(cat ports.txt | parallel "checkPort {} $KEY" > /tmp/parallel.$LOCKID.txt; rm /tmp/$LOCKID.cookies.txt ) &
+(cat $INFILE | parallel --colsep " " "checkPort {1} {2} $KEY" > /tmp/parallel.$LOCKID.txt; rm /tmp/$LOCKID.cookies.txt ) &
 
 echo; echo "Scanning:"
 echo; echo; echo; echo; echo; echo;
