@@ -108,7 +108,7 @@ function checkPort() {
     -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36' \
     -H 'Content-Type: application/x-www-form-urlencoded' \
     -H 'Referer:https://nit.byu.edu/ry/webapp/nit/app?service=page/JackLookup' \
-    --data 'service=direct%2F0%2FJackLookup%2FpageContent.%24BForm.form&sp=S1&Form1=byu_brownie%2C%24TextField%2C%24TextField%240%2C%24Submit&byu_brownie='"$KEY"'&%24TextField=ESC&%24TextField%240='"$PORT"'&%24Submit=Lookup+Jack' \
+    --data 'service=direct%2F0%2FJackLookup%2FpageContent.%24BForm.form&sp=S1&Form1=byu_brownie%2C%24TextField%2C%24TextField%240%2C%24Submit&byu_brownie='"$KEY"'&%24TextField='"$BUILDING"'&%24TextField%240='"$PORT"'&%24Submit=Lookup+Jack' \
     -s)
 
   createInfoTable "$RESULT"
