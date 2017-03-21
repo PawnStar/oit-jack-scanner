@@ -63,18 +63,21 @@ function displayStatus() {
 
 function createInfoTable() {
   RESULT="$1"
+  LINES=$(echo "$RESULT" | tr -d '\n\r' | sed 's/tr/\n/g' | grep -E '<td align="right"( valign="top")?>');
 
   function getResultField() {
-    LINES=$(echo "$RESULT" | tr -d '\n\r' | sed 's/tr/\n/g' | grep '<td align="right">');
-
-    SECTION=$(echo "$LINES" | grep -E '<td align="right">( <font color="green">)?(No )?'"$1"'(</font> )?(:)?</td>')
+    SECTION=$(echo "$LINES" | grep -E '<td align="right"( valign="top")?>( <font color="green">)?(No )?'"$1"'(</font> )?(:)?</td>')
     RESULT=$(echo "$SECTION" | grep -oE '<td>(<a [^>]*>)?[^<]*' | grep -o '[^>]*$')
+
+    #Remove whitespace
+    RESULT="${RESULT#"${RESULT%%[![:space:]]*}"}"
+    RESULT="${RESULT%"${RESULT##*[![:space:]]}"}"
+
     if [[ $RESULT == "" ]]; then
       echo "no$1"
     else
       echo "$RESULT"
     fi
-    #echo $(echo "$SECTION" | grep '<td>(<a [^>]*>)?[^<]*' | grep '>.*$' | grep '[*>]*')
   }
 
   STATUS="unknown"
@@ -90,7 +93,20 @@ function createInfoTable() {
   else
     STATUS="unknown"
   fi
-  echo "$BUILDING,$PORT,$STATUS,$(getResultField 'Room'),$(getResultField 'Link'),noDevice,noIp,$(getResultField 'Pair'),$(getResultField 'Department'),$(getResultField 'Power'),$(getResultField 'Config')"
+
+  DEVICES=$(echo "$LINES" | grep 'IP:' -A 2 | tr -d ' ' | while read IP; do read HOSTNAME; read MAC; echo \"$IP $HOSTNAME $MAC\" ; done )
+
+  if [[ -z "$DEVICES" ]]; then
+    echo "$BUILDING,$PORT,$STATUS,$(getResultField 'Room'),$(getResultField 'Link'),noDevice,noIp,$(getResultField 'Pair'),$(getResultField 'Department'),$(getResultField 'Power'),$(getResultField 'Config')"
+  else
+    echo "$DEVICES" | while read device; do
+      IP=$(echo "$device" | grep -o 'IP:</td><td><ahref="[^"]*">[^<]*' | grep -o '[^>]*$')
+      HOST=$(echo "$device" | grep -o 'Hostname:</td><td>[^<]*' | grep -o '[^>]*$')
+      if [ -z "$IP" ]; then IP="noIp"; fi;
+      if [ -z "$HOST" ]; then HOST="noDevice"; fi;
+      echo "$BUILDING,$PORT,$STATUS,$(getResultField 'Room'),$(getResultField 'Link'),$HOST,$IP,$(getResultField 'Pair'),$(getResultField 'Department'),$(getResultField 'Power'),$(getResultField 'Config')"
+    done
+  fi
 }
 
 
