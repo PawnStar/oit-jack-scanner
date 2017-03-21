@@ -1,6 +1,7 @@
 LOCKID=$((1 + RANDOM % 100000))
 INFILE=$1
 OUTFILE=$2
+NUMPORTS=$(cat $INFILE | wc -l)
 
 function extractField() {
   # $1 should be input to extract from.
@@ -56,7 +57,7 @@ function displayStatus() {
   echo "$NONEXISTANT ports that don't exist"
   echo "$ERROR errors encountered"
   echo "----"
-  echo "$TOTAL scanned"
+  echo "$TOTAL/$NUMPORTS scanned"
 }
 
 
