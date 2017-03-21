@@ -37,7 +37,7 @@ function saveLoginCookie() {
 }
 
 function displayStatus() {
-  CONNECTED=$(cat $1 | grep ",connected" | wc -l)
+  CONNECTED=$(cat $1 | grep -o '^[^,]*,[^,]*,connected' | uniq | wc -l)
   UNCONNECTED=$(cat $1 | grep ",unconnected" | wc -l)
   NONEXISTANT=$(cat $1 | grep ',nonexistant' | wc -l)
   ERROR=$(cat $1 | grep ',unknown' | wc -l)
